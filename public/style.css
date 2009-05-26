@@ -1,0 +1,9 @@
+body {
+  font-family: Verdana, Arial;
+}
+
+.error {
+  padding: 1em;
+  background-color: #c00000;
+  color: white;
+}

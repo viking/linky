@@ -1,0 +1,26 @@
+- if @db_error
+  %div.error
+    == Error code: #{@db_error.errno}
+    %br/
+    == Error message: #{@db_error.error}
+    %br/
+    - if @error.respond_to?("sqlstate")
+      == Error SQLSTATE: #{@db_error.sqlstate}
+
+%h1 Login to database
+%form{:method => 'post', :action => '/'}
+  %table
+    %tr
+      %td Server:
+      %td
+        %input{:type => 'text', :name => 'db[server]'}/
+    %tr
+      %td User:
+      %td
+        %input{:type => 'text', :name => 'db[user]'}/
+    %tr
+      %td Password:
+      %td
+        %input{:type => 'password', :name => 'db[password]'}/
+  %p
+    %input{:type => 'submit', :value => 'Submit'}/

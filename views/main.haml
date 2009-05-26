@@ -1,0 +1,65 @@
+%form#query{:method => 'post'}
+  %table
+    %thead
+      %tr
+        %th Set
+        %th Columns
+        %th From
+        %th Where
+        %th Order
+        %th Database
+    %tbody
+      - %w{A B}.each do |set|
+        %tr
+          %td= set
+          %td
+            %input{:type => 'text', :name => "set[#{set}][columns]"}/
+          %td
+            %select{:id => "set_#{set}_from", :name => "set[#{set}][from]"}/
+          %td
+            %input{:type => 'text', :name => "set[#{set}][where]"}/
+          %td
+            %input{:type => 'text', :name => "set[#{set}][order]"}/
+          %td
+            %select{:id => "set_#{set}_database", :name => "set[#{set}][database]"}
+              %option/
+              - @databases.each do |database|
+                %option= database
+  %p
+    Join:
+    %input{:type => 'text', :name => 'join'}/
+    (Ex: A.MomSSN = B.SSN)
+  %p
+    %input{:type => 'submit', :value => 'Submit'}/
+
+#results
+
+:javascript
+  function update_tables(elem) {
+    select = $('#'+elem.id.replace('database', 'from'));
+    select.children().remove();
+    database = $(elem).val();
+    if (database != "") {
+      $.getJSON("/tables/"+database, function(data) {
+        $.each(data, function(i, name) {
+          $('<option>'+name+'</option>').appendTo(select);
+        });
+      });
+    }
+  }
+
+  $(function() {
+    $('#set_A_database, #set_B_database').change(function() { update_tables(this); });
+    $('#query').submit(function() {
+      $.ajax({
+        type: 'POST',
+        url: '/query',
+        data: $(this).serialize(),
+        dataType: 'html',
+        success: function(data) {
+          $('#results').html(data);
+        }
+      });
+      return false;
+    });
+  });
