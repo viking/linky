@@ -3,28 +3,28 @@
     %thead
       %tr
         %th Set
+        %th Database
+        %th Table
         %th Columns
-        %th From
         %th Where
         %th Order
-        %th Database
     %tbody
       - %w{A B}.each do |set|
         %tr
           %td= set
           %td
-            %input{:type => 'text', :name => "set[#{set}][columns]"}/
-          %td
-            %select{:id => "set_#{set}_from", :name => "set[#{set}][from]"}/
-          %td
-            %input{:type => 'text', :name => "set[#{set}][where]"}/
-          %td
-            %input{:type => 'text', :name => "set[#{set}][order]"}/
-          %td
             %select{:id => "set_#{set}_database", :name => "set[#{set}][database]"}
               %option/
               - @databases.each do |database|
                 %option= database
+          %td
+            %select{:id => "set_#{set}_from", :name => "set[#{set}][from]"}/
+          %td
+            %input{:type => 'text', :name => "set[#{set}][columns]"}/
+          %td
+            %input{:type => 'text', :name => "set[#{set}][where]"}/
+          %td
+            %input{:type => 'text', :name => "set[#{set}][order]"}/
   %p
     Join:
     %input{:type => 'text', :name => 'join'}/
@@ -41,6 +41,7 @@
     database = $(elem).val();
     if (database != "") {
       $.getJSON("/tables/"+database, function(data) {
+        $('<option></option>').appendTo(select);
         $.each(data, function(i, name) {
           $('<option>'+name+'</option>').appendTo(select);
         });
@@ -50,6 +51,7 @@
 
   $(function() {
     $('#set_A_database, #set_B_database').change(function() { update_tables(this); });
+    $('#set_A_database, #set_B_database').change();
     $('#query').submit(function() {
       $.ajax({
         type: 'POST',

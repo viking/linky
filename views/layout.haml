@@ -1,5 +1,16 @@
 %html
-  %title Linky
-  %link{:type => "text/css", :rel => "stylesheet", :href => "/style.css"}/
-  %script{:type => 'text/javascript', :src => '/jquery-1.3.2.min.js'}
-  %body= yield
+  %head
+    %title Linky
+    %link{:type => "text/css", :rel => "stylesheet", :href => "/style.css"}/
+    %script{:type => 'text/javascript', :src => '/jquery-1.3.2.min.js'}
+  %body
+    #error
+      - if @db_error
+        .error
+          == Error code: #{@db_error.errno}
+          %br/
+          == Error message: #{@db_error.error}
+          %br/
+          - if @error.respond_to?("sqlstate")
+            == Error SQLSTATE: #{@db_error.sqlstate}
+    = yield
