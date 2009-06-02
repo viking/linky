@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'sinatra'
 require 'haml'
+require 'sass'
 require 'mysql'
 require 'json'
 require 'ruby-debug'
@@ -26,7 +27,7 @@ helpers do
     end
   end
 
-  def fetch_all_rows(sql)
+  def fetch_all(sql)
     rows = []
     result = @dbh.query(sql)
     result.each { |row| rows << row }
@@ -54,13 +55,19 @@ helpers do
         end
 
         b_id = b_vals.shift
-        @candidates << (b = {})
-        b_cols.each_with_index do |column, i|
-          b[column] = b_vals[i]
+        if !b_id.nil?
+          @candidates << (b = {})
+          b_cols.each_with_index do |column, i|
+            b[column] = b_vals[i]
+          end
         end
       end
     end
   end
+end
+
+get '/style.css' do
+  sass :style
 end
 
 get '/' do
@@ -80,14 +87,14 @@ end
 
 get '/main' do
   try do
-    @databases = fetch_all_rows("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY SCHEMA_NAME").flatten
+    @databases = fetch_all("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY SCHEMA_NAME").flatten
     haml :main
   end
 end
 
 get '/tables/:database' do
   try do
-    fetch_all_rows("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{params[:database]}' ORDER BY TABLE_NAME").flatten.to_json
+    fetch_all("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '#{params[:database]}' ORDER BY TABLE_NAME").flatten.to_json
   end
 end
 
@@ -113,8 +120,7 @@ end
 post '/query' do
   # construct query
   sets = params['set']
-  columns = []; order = []; from = []
-  where = ["A._id = ?"]
+  columns = []; from = []
   sets.each_pair do |name, set|
     # columns
     columns << "#{name}._id AS #{name}_id"
@@ -123,27 +129,24 @@ post '/query' do
       columns << "#{name}.#{column} AS #{name}#{i}"
     end
 
-    # from
-    database = set['database']
-    table = set['from']
-    from << %{SELECT (@#{name}:=(IFNULL(@#{name},0)+1)) AS _id, #{table}.* FROM #{database}.#{table}}
-
     # where
-    where << "(#{set['where']})"  unless set['where'].empty?
+    where = set['where'].empty? ? "" : " WHERE #{set['where']}"
 
     # order
     set['order'] = set['order'].split(/\s*,\s*/)
-    set['order'].each do |column|
-      order << "#{name}.#{column}"
-    end
+    order = set['order'].empty? ? "" : " ORDER BY " + set['order'].join(", ")
+
+    # from
+    database = set['database']
+    table = set['from']
+    from << %{SELECT (@#{name}:=(IFNULL(@#{name},0)+1)) AS _id, #{set['columns'].join(", ")} FROM #{database}.#{table}#{where}#{order}}
   end
   query = <<-EOF
     SELECT #{columns.join(", ")}
     FROM (#{from[0]}) A
     LEFT JOIN (#{from[1]}) B ON #{params['join']}
+    WHERE A._id = ?
   EOF
-  query << "  WHERE #{where.join(" AND ")}\n"
-  query << "  ORDER BY #{order.join(", ")}"    unless order.empty?
 
   # setup session
   session[:query] = query

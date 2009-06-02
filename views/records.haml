@@ -1,11 +1,11 @@
 %table#records
   %thead
     %tr
-      %th.target-header
+      %th.target
         %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
         Target
         %a{:href => '#', :onclick => "update_records(#{@which+1});"} &gt;
-      %th.candidates-header Candidates
+      %th.candidates Candidates
   %tbody
     %td#target
       - if @target
@@ -21,8 +21,8 @@
                 %td= @target[name]
       - else
         N/A
-    %td#candidates
-      - if !@candidates.empty?
+    - if !@candidates.empty?
+      %td#candidates
         %table
           %thead
             %tr
@@ -35,8 +35,8 @@
                 %td.label= name
                 - @candidates.each do |candidate|
                   %td= candidate[name]
-      - else
-        N/A
+    - else
+      %td.empty N/A
 %pre
   = session[:query]
 %pre
