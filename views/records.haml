@@ -1,0 +1,45 @@
+%table#records
+  %thead
+    %tr
+      %th.target-header
+        %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
+        Target
+        %a{:href => '#', :onclick => "update_records(#{@which+1});"} &gt;
+      %th.candidates-header Candidates
+  %tbody
+    %td#target
+      - if @target
+        %table
+          %thead
+            %tr
+              %th Label
+              %th Value
+          %tbody
+            - session[:a_columns].each_with_index do |name, i|
+              %tr{:class => i % 2 == 1 ? 'alt' : nil}
+                %td.label= name
+                %td= @target[name]
+      - else
+        N/A
+    %td#candidates
+      - if !@candidates.empty?
+        %table
+          %thead
+            %tr
+              %th Label
+              - @candidates.count.times do |i|
+                %th= i+1
+          %tbody
+            - session[:b_columns].each_with_index do |name, i|
+              %tr{:class => i % 2 == 1 ? 'alt' : nil}
+                %td.label= name
+                - @candidates.each do |candidate|
+                  %td= candidate[name]
+      - else
+        N/A
+%pre
+  = session[:query]
+%pre
+  - require 'pp'
+  = PP.pp(@target, "")
+  = PP.pp(@candidates, "")

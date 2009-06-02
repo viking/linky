@@ -3,6 +3,7 @@ require 'sinatra'
 require 'haml'
 require 'mysql'
 require 'json'
+require 'ruby-debug'
 
 enable :sessions
 
@@ -32,10 +33,38 @@ helpers do
     result.free
     rows
   end
+
+  def run_query
+    try(:error) do
+      @stmt.prepare(session[:query])
+      @stmt.execute(@which)
+
+      # process result
+      @candidates = []
+      a_cols = session[:a_columns]
+      b_cols = session[:b_columns]
+      ranges = [0..a_cols.count, (a_cols.count+1)..-1]
+      @stmt.each do |row|
+        a_vals, b_vals = ranges.collect { |r| row[r] }
+        unless @target
+          @target = {'_id' => a_vals.shift.to_i}
+          a_cols.each_with_index do |column, i|
+            @target[column] = a_vals[i]
+          end
+        end
+
+        b_id = b_vals.shift
+        @candidates << (b = {})
+        b_cols.each_with_index do |column, i|
+          b[column] = b_vals[i]
+        end
+      end
+    end
+  end
 end
 
 get '/' do
-  haml :start
+  haml :login
 end
 
 post '/' do
@@ -44,7 +73,7 @@ post '/' do
     :user     => params[:db][:user],
     :password => params[:db][:password]
   }
-  try(:start) do
+  try(:login) do
     redirect '/main'
   end
 end
@@ -82,67 +111,55 @@ get '/columns/:database/:table' do
 end
 
 post '/query' do
-  try(:error) do
-    # construct query
-    sets = params['set']
-    columns = []; order = []; from = []; where = []
-    sets.each_pair do |name, set|
-      # columns
-      columns << "#{name}._id AS #{name}_id"
-      set['columns'] = set['columns'].split(/\s*,\s*/)
-      set['columns'].each_with_index do |column, i|
-        columns << "#{name}.#{column} AS #{name}#{i}"
-      end
-
-      # from
-      database = set['database']
-      table    = set['from']
-      from << %{SELECT (@#{name}:=(IFNULL(@#{name},0)+1)) AS _id, #{table}.* FROM #{database}.#{table}}
-
-      # where
-      where << "(#{set['where']})"  unless set['where'].empty?
-
-      # order
-      set['order'] = set['order'].split(/\s*,\s*/)
-      set['order'].each do |column|
-        order << "#{name}.#{column}"
-      end
-    end
-    @query = <<-EOF
-      SELECT #{columns.join(", ")}
-      FROM (#{from[0]}) A
-      LEFT JOIN (#{from[1]}) B ON #{params['join']}
-    EOF
-    @query << "  WHERE #{where.join(" AND ")}\n"  unless where.empty?
-    @query << "  ORDER BY #{order.join(", ")}"    unless order.empty?
-    @stmt.prepare(@query)
-    @stmt.execute
-
-    # process result
-    @records = {}
-    a_cols = sets['A']['columns']
-    b_cols = sets['B']['columns']
-    ranges = [0..a_cols.count, (a_cols.count+1)..-1]
-    @stmt.each do |row|
-      a_vals, b_vals = row.values_at(*ranges)
-      a_id = a_vals.shift
-      unless @records[a_id]
-        @records[a_id] = { 'A' => (a = {}), 'B' => [] }
-        a_cols.each_with_index do |column, i|
-          a[column] = a_vals[i]
-        end
-      end
-
-      b_id = b_vals.shift
-      @records[a_id]['B'] << (b = {})
-      b_cols.each_with_index do |column, i|
-        b[column] = row["B#{i}"]
-      end
+  # construct query
+  sets = params['set']
+  columns = []; order = []; from = []
+  where = ["A._id = ?"]
+  sets.each_pair do |name, set|
+    # columns
+    columns << "#{name}._id AS #{name}_id"
+    set['columns'] = set['columns'].split(/\s*,\s*/)
+    set['columns'].each_with_index do |column, i|
+      columns << "#{name}.#{column} AS #{name}#{i}"
     end
 
-    # display!
-    haml :query
+    # from
+    database = set['database']
+    table = set['from']
+    from << %{SELECT (@#{name}:=(IFNULL(@#{name},0)+1)) AS _id, #{table}.* FROM #{database}.#{table}}
+
+    # where
+    where << "(#{set['where']})"  unless set['where'].empty?
+
+    # order
+    set['order'] = set['order'].split(/\s*,\s*/)
+    set['order'].each do |column|
+      order << "#{name}.#{column}"
+    end
   end
+  query = <<-EOF
+    SELECT #{columns.join(", ")}
+    FROM (#{from[0]}) A
+    LEFT JOIN (#{from[1]}) B ON #{params['join']}
+  EOF
+  query << "  WHERE #{where.join(" AND ")}\n"
+  query << "  ORDER BY #{order.join(", ")}"    unless order.empty?
+
+  # setup session
+  session[:query] = query
+  session[:a_columns] = sets['A']['columns']
+  session[:b_columns] = sets['B']['columns']
+
+  # display!
+  @which = 1
+  run_query
+  haml :records, :layout => false
+end
+
+get '/candidates/:which' do
+  @which = params[:which].to_i
+  run_query
+  haml :records, :layout => false
 end
 
 get '/logout' do

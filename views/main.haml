@@ -25,34 +25,23 @@
             %input{:type => 'text', :name => "set[#{set}][where]"}/
           %td
             %input{:type => 'text', :name => "set[#{set}][order]"}/
+          %td
+            %img{:id => "set_#{set}_spinner", :src => 'ajax-loader.gif', :style => 'display:none;'}/
   %p
     Join:
     %input{:type => 'text', :name => 'join'}/
     (Ex: A.MomSSN = B.SSN)
   %p
-    %input{:type => 'submit', :value => 'Submit'}/
+    %input{:type => 'submit', :value => 'Start'}/
+    %img#query_spinner{:src => 'ajax-loader.gif', :style => 'display:none;'}/
 
 #results
 
 :javascript
-  function update_tables(elem) {
-    select = $('#'+elem.id.replace('database', 'from'));
-    select.children().remove();
-    database = $(elem).val();
-    if (database != "") {
-      $.getJSON("/tables/"+database, function(data) {
-        $('<option></option>').appendTo(select);
-        $.each(data, function(i, name) {
-          $('<option>'+name+'</option>').appendTo(select);
-        });
-      });
-    }
-  }
-
   $(function() {
     $('#set_A_database, #set_B_database').change(function() { update_tables(this); });
-    $('#set_A_database, #set_B_database').change();
     $('#query').submit(function() {
+      $('#query_spinner').show();
       $.ajax({
         type: 'POST',
         url: '/query',
@@ -60,6 +49,7 @@
         dataType: 'html',
         success: function(data) {
           $('#results').html(data);
+          $('#query_spinner').hide();
         }
       });
       return false;

@@ -7,3 +7,50 @@ body {
   background-color: #c00000;
   color: white;
 }
+
+#results table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+#records th.target-header {
+  background-color: green;
+  color: white;
+}
+
+#records th.target-header a {
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#records th.candidates-header {
+  background-color: blue;
+  color: white;
+}
+
+#records table th {
+  background-color: #333;
+  color: white;
+  padding: 5px;
+}
+
+#records table td {
+  vertical-align: top;
+  padding: 5px;
+  border-left: 1px solid black;
+}
+
+#records table td.label {
+  vertical-align: top;
+  padding: 5px;
+  border-left: 0;
+}
+
+#target {
+  border-right: 2px solid black;
+}
+
+tr.alt td {
+  background-color: #ddd;
+}

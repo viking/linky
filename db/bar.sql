@@ -1,5 +1,7 @@
 DROP DATABASE IF EXISTS bar;
 CREATE DATABASE bar;
+GRANT ALL PRIVILEGES ON bar.* to linky@localhost;
+
 USE bar;
 CREATE TABLE people (name VARCHAR(25), favorite_animal VARCHAR(25));
 INSERT INTO people VALUES ('Dude',   'dog');
