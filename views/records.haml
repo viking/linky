@@ -1,43 +1,34 @@
 %h2 Results
-%table#records
-  %thead
-    %tr
-      %th.target
-        %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
-        Target
-        %a{:href => '#', :onclick => "update_records(#{@which+1});"} &gt;
-      %th.candidates Candidates
-  %tbody
-    %td#target
-      - if @target
-        %table
-          %thead
-            %tr
-              %th Label
-              %th Value
-          %tbody
-            - session[:a_columns].each_with_index do |name, i|
-              %tr{:class => i % 2 == 1 ? 'alt' : nil}
-                %td.label= name
-                %td= @target[name]
-      - else
-        N/A
-    - if !@candidates.empty?
-      %td#candidates
-        %table
-          %thead
-            %tr
-              %th Label
-              - @candidates.length.times do |i|
-                %th= i+1
-          %tbody
-            - session[:b_columns].each_with_index do |name, i|
-              %tr{:class => i % 2 == 1 ? 'alt' : nil}
-                %td.label= name
-                - @candidates.each do |candidate|
-                  %td= candidate[name]
-    - else
-      %td.empty N/A
+%div#target
+  %div.header
+    %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
+    Target
+    %a{:href => '#', :onclick => "update_records(#{@which+1});"} &gt;
+  %table
+    %thead
+      %tr
+        %th Label
+        %th Value
+    %tbody
+      - session[:a_columns].each_with_index do |name, i|
+        %tr{:class => i % 2 == 1 ? 'alt' : nil}
+          %td.label= name
+          %td= @target[name]
+%div#candidates
+  %div.header Candidates
+  - if !@candidates.empty?
+    %table
+      %thead
+        %tr
+          %th Label
+          - @candidates.length.times do |i|
+            %th= i+1
+      %tbody
+        - session[:b_columns].each_with_index do |name, i|
+          %tr{:class => i % 2 == 1 ? 'alt' : nil}
+            %td.label= name
+            - @candidates.each do |candidate|
+              %td= candidate[name]
 
 %h2 Query
 %pre
