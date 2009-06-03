@@ -36,30 +36,28 @@ helpers do
   end
 
   def run_query
-    try(:error) do
-      @stmt.prepare(session[:query])
-      @stmt.execute(@which)
+    @stmt.prepare(session[:query])
+    @stmt.execute(@which)
 
-      # process result
-      @candidates = []
-      a_cols = session[:a_columns]
-      b_cols = session[:b_columns]
-      ranges = [0..a_cols.count, (a_cols.count+1)..-1]
-      @stmt.each do |row|
-        a_vals, b_vals = ranges.collect { |r| row[r] }
-        unless @target
-          @target = {'_id' => a_vals.shift.to_i}
-          a_cols.each_with_index do |column, i|
-            @target[column] = a_vals[i]
-          end
+    # process result
+    @candidates = []
+    a_cols = session[:a_columns]
+    b_cols = session[:b_columns]
+    ranges = [0..a_cols.length, (a_cols.length+1)..-1]
+    @stmt.each do |row|
+      a_vals, b_vals = ranges.collect { |r| row[r] }
+      unless @target
+        @target = {'_id' => a_vals.shift.to_i}
+        a_cols.each_with_index do |column, i|
+          @target[column] = a_vals[i]
         end
+      end
 
-        b_id = b_vals.shift
-        if !b_id.nil?
-          @candidates << (b = {})
-          b_cols.each_with_index do |column, i|
-            b[column] = b_vals[i]
-          end
+      b_id = b_vals.shift
+      if !b_id.nil?
+        @candidates << (b = {})
+        b_cols.each_with_index do |column, i|
+          b[column] = b_vals[i]
         end
       end
     end
@@ -87,7 +85,12 @@ end
 
 get '/main' do
   try do
-    @databases = fetch_all("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY SCHEMA_NAME").flatten
+    @databases = fetch_all(<<-EOF).flatten
+      SELECT SCHEMA_NAME
+      FROM INFORMATION_SCHEMA.SCHEMATA
+      WHERE SCHEMA_NAME != 'information_schema'
+      ORDER BY SCHEMA_NAME
+    EOF
     haml :main
   end
 end
@@ -100,20 +103,7 @@ end
 
 get '/columns/:database/:table' do
   try do
-    result = @dbh.query(<<-EOF)
-      SELECT COLUMN_NAME, COLUMN_KEY
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = '#{params[:database]}' AND
-            TABLE_NAME = '#{params[:table]}'
-      ORDER BY COLUMN_NAME
-    EOF
-    hash = { :columns => [], :keys => [] }
-    result.each do |row|
-      hash[:columns] << row[0]
-      hash[:keys]    << row[0]    if row[1] == "PRI"
-    end
-    result.free
-    hash.to_json
+    fetch_all("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '#{params[:database]}' AND TABLE_NAME = '#{params[:table]}' ORDER BY COLUMN_NAME").flatten.to_json
   end
 end
 
@@ -154,15 +144,19 @@ post '/query' do
   session[:b_columns] = sets['B']['columns']
 
   # display!
-  @which = 1
-  run_query
-  haml :records, :layout => false
+  try(:error) do
+    @which = 1
+    run_query
+    haml :records, :layout => false
+  end
 end
 
 get '/candidates/:which' do
-  @which = params[:which].to_i
-  run_query
-  haml :records, :layout => false
+  try(:error) do
+    @which = params[:which].to_i
+    run_query
+    haml :records, :layout => false
+  end
 end
 
 get '/logout' do

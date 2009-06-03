@@ -1,3 +1,4 @@
+%h2 Results
 %table#records
   %thead
     %tr
@@ -27,7 +28,7 @@
           %thead
             %tr
               %th Label
-              - @candidates.count.times do |i|
+              - @candidates.length.times do |i|
                 %th= i+1
           %tbody
             - session[:b_columns].each_with_index do |name, i|
@@ -37,9 +38,7 @@
                   %td= candidate[name]
     - else
       %td.empty N/A
+
+%h2 Query
 %pre
   = session[:query]
-%pre
-  - require 'pp'
-  = PP.pp(@target, "")
-  = PP.pp(@candidates, "")

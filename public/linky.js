@@ -1,8 +1,9 @@
 function update_tables(elem) {
   select = $('#'+elem.id.replace('database', 'from'));
   spinner = $('#'+elem.id.replace('database', 'spinner'));
-  select.children().remove();
   database = $(elem).val();
+
+  select.children().remove();
   if (database != "") {
     spinner.show();
     $.getJSON("/tables/"+database, function(data) {
@@ -12,6 +13,24 @@ function update_tables(elem) {
       });
       spinner.hide();
     });
+  }
+}
+
+function update_columns(elem) {
+  input = $('#'+elem.id.replace('from', 'columns'));
+  spinner = $('#'+elem.id.replace('from', 'spinner'));
+  database = $('#'+elem.id.replace('from', 'database')).val();
+  table = $(elem).val();
+
+  if (database != "" && table != "") {
+    spinner.show();
+    $.getJSON("/columns/"+database+"/"+table, function(data) {
+      input.autocomplete(data, { multiple: true });
+      spinner.hide();
+    });
+  }
+  else {
+    input.autocomplete([]);
   }
 }
 

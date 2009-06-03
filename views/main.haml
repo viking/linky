@@ -1,4 +1,5 @@
-%form#query{:method => 'post'}
+%h2 Query
+%form{:method => 'post'}
   %table
     %thead
       %tr
@@ -20,7 +21,7 @@
           %td
             %select{:id => "set_#{set}_from", :name => "set[#{set}][from]"}/
           %td
-            %input{:type => 'text', :name => "set[#{set}][columns]"}/
+            %input{:id => "set_#{set}_columns", :type => 'text', :name => "set[#{set}][columns]"}/
           %td
             %input{:type => 'text', :name => "set[#{set}][where]"}/
           %td
@@ -40,7 +41,8 @@
 :javascript
   $(function() {
     $('#set_A_database, #set_B_database').change(function() { update_tables(this); });
-    $('#query').submit(function() {
+    $('#set_A_from, #set_B_from').change(function() { update_columns(this); });
+    $('form').submit(function() {
       $('#query_spinner').show();
       $.ajax({
         type: 'POST',
