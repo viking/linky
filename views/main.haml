@@ -43,17 +43,16 @@
     $('#set_A_database, #set_B_database').change(function() { update_tables(this); });
     $('#set_A_from, #set_B_from').change(function() { update_columns(this); });
     $('form').submit(function() {
+      $('#results').html('');
       $('#query_spinner').show();
       $.ajax({
         type: 'POST',
         url: '/query',
         data: $(this).serialize(),
         dataType: 'html',
-        success: function(data) {
-          $('#results').html(data);
-          $('#query_spinner').hide();
-        }
+        success: function(data) { set_results(data); }
       });
       return false;
     });
+    $('form')[0].reset();
   });

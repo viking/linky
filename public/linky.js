@@ -40,10 +40,12 @@ function update_records(which) {
     type: 'GET',
     url: '/candidates/'+which,
     dataType: 'html',
-    success: function(data) {
-      $('#results').html(data);
-      $('#query_spinner').hide();
-    }
+    success: function(data) { set_results(data); }
   });
 }
 
+function set_results(data) {
+  $('#results').html(data);
+  $('#query_spinner').hide();
+  $('#results .editable').editable(function(value) { update_records(value); }, { style: "inherit", width: '40' });
+}
