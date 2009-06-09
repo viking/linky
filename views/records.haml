@@ -3,7 +3,7 @@
   %table
     %thead
       %tr
-        %th.header{:colspan => 2}
+        %th.green{:colspan => 2}
           %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
           Target (
           %div.editable= @which
@@ -18,10 +18,11 @@
           %td.label= name
           %td= @target[name]
 %div#candidates
-  %div.header Candidates
   - if !@candidates.empty?
     %table
       %thead
+        %tr
+          %th.blue{:colspan => @candidates.length+1} Candidates
         %tr
           %th Label
           - @candidates.length.times do |i|
@@ -32,7 +33,3 @@
             %td.label= name
             - @candidates.each do |candidate|
               %td= candidate[name]
-
-%h2 Query
-%pre
-  = session[:query]

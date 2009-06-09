@@ -1,4 +1,4 @@
-function update_tables(elem) {
+function update_tables(elem, def, callback) {
   select = $('#'+elem.id.replace('database', 'from'));
   spinner = $('#'+elem.id.replace('database', 'spinner'));
   database = $(elem).val();
@@ -9,8 +9,15 @@ function update_tables(elem) {
     $.getJSON("/tables/"+database, function(data) {
       $('<option></option>').appendTo(select);
       $.each(data, function(i, name) {
-        $('<option>'+name+'</option>').appendTo(select);
+        option = $('<option>'+name+'</option>')
+        if (name == def) {
+          option.attr('selected', true);
+        }
+        option.appendTo(select);
       });
+      if (callback != undefined) {
+        callback.call();
+      }
       spinner.hide();
     });
   }

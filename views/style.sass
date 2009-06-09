@@ -31,32 +31,21 @@ form
   p
     margin: 10px 0
 
-#target, #candidates
-  .header
-    padding: 0 10px
-    color: white
-    a
-      color: white
-      font-weight: bold
-      text-decoration: none
-
 #target
-  float: left
-  border: 1px solid black
   margin-bottom: 15px
-  .header
-    background-color: green
 
 #candidates
-  clear: both
   width: 900px
   overflow: auto
-  background-color: blue
-  border: 1px solid black
 
 #results
   th
     color: white
+    padding: 0 10px
+    a
+      color: white
+      font-weight: bold
+      text-decoration: none
   td
     vertical-align: top
   td.empty
@@ -66,10 +55,15 @@ form
   table
     border-collapse: collapse
     border-spacing: 0
+    border: 1px solid black
     th
       background-color: #333
       color: white
       padding: 5px
+    th.green
+      background-color: green
+    th.blue
+      background-color: blue
     td
       padding: 5px
       border-left: 1px solid black
@@ -121,6 +115,5 @@ tr.alt td
 //
 // jEditable
 //
-
 .editable
   display: inline

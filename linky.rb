@@ -2,13 +2,22 @@ require 'rubygems'
 require 'sinatra'
 require 'haml'
 require 'sass'
-require 'mysql'
 require 'json'
-require 'ruby-debug'
+require 'mysql'
+require 'yaml'
+HISTORY = File.dirname(__FILE__) + "/last.yml"
 
 enable :sessions
 
 helpers do
+  def get_last
+    @last = File.exist?(HISTORY) ? YAML.load_file(HISTORY) : Hash.new(Hash.new(Hash.new))
+  end
+
+  def set_last
+    File.open(HISTORY, 'w') { |f| f.puts params.to_yaml }
+  end
+
   def try(view_for_failure = nil)
     if session[:db]
       begin
@@ -91,6 +100,7 @@ get '/main' do
       WHERE SCHEMA_NAME != 'information_schema'
       ORDER BY SCHEMA_NAME
     EOF
+    get_last
     haml :main
   end
 end
@@ -108,46 +118,62 @@ get '/columns/:database/:table' do
 end
 
 post '/query' do
-  # construct query
-  sets = params['set']
-  columns = []; from = []
-  sets.each_pair do |name, set|
-    # columns
-    columns << "#{name}._id AS #{name}_id"
-    set['columns'] = set['columns'].split(/\s*,\s*/)
-    set['columns'].each_with_index do |column, i|
-      columns << "#{name}.#{column} AS #{name}#{i}"
-    end
-
-    # where
-    where = set['where'].empty? ? "" : " WHERE #{set['where']}"
-
-    # order
-    set['order'] = set['order'].split(/\s*,\s*/)
-    order = set['order'].empty? ? "" : " ORDER BY " + set['order'].join(", ")
-
-    # from
-    database = set['database']
-    table = set['from']
-    from << %{SELECT (@#{name}:=(IFNULL(@#{name},0)+1)) AS _id, #{set['columns'].join(", ")} FROM #{database}.#{table}#{where}#{order}}
-  end
-  query = <<-EOF
-    SELECT #{columns.join(", ")}
-    FROM (#{from[0]}) A
-    LEFT JOIN (#{from[1]}) B ON #{params['join']}
-    WHERE A._id = ?
-  EOF
-
-  # setup session
-  session[:query] = query
-  session[:a_columns] = sets['A']['columns']
-  session[:b_columns] = sets['B']['columns']
-
-  # display!
   try(:error) do
-    @which = 1
-    run_query
-    haml :records, :layout => false
+    # construct query
+    set_last
+    sets = params['set']
+    columns = []; from = []; primary_keys = []
+    sets.each_pair do |name, set|
+      # look for primary key
+      keys = fetch_all("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '#{set['database']}' AND TABLE_NAME = '#{set['from']}' AND COLUMN_KEY = 'PRI' ORDER BY COLUMN_NAME").flatten
+      need_subquery = keys.empty?
+
+      # columns
+      if need_subquery
+        primary_keys << "#{name}._id"
+      else
+        if keys.length == 1
+          primary_keys << "#{name}.#{keys[0]}"
+        else
+          primary_keys << "CONCAT(#{keys.collect{|k|"#{name}.#{k}"}.join(", ")})"
+        end
+      end
+      columns << "#{primary_keys[-1]} AS #{name}_id"
+
+      set['columns'] = set['columns'].split(/\s*,\s*/)
+      set['columns'].each_with_index do |column, i|
+        columns << "#{name}.#{column} AS #{name}#{i}"
+      end
+
+      # where
+      where = set['where'].empty? ? "" : " WHERE #{set['where']}"
+
+      # order
+      set['order'] = set['order'].split(/\s*,\s*/)
+      order = set['order'].empty? ? "" : " ORDER BY " + set['order'].join(", ")
+
+      # from
+      database = set['database']
+      table = set['from']
+      if need_subquery
+        from << %{(SELECT (@#{name}:=(IFNULL(@#{name},0)+1)) AS _id, #{set['columns'].join(", ")} FROM #{database}.#{table}#{where}#{order})}
+      else
+        from << "#{database}.#{table}"
+      end
+    end
+    query = <<-EOF
+      SELECT #{columns.join(", ")}
+      FROM #{from[0]} A
+      LEFT JOIN #{from[1]} B ON #{params['join']}
+      WHERE #{primary_keys[0]} = ?
+    EOF
+
+    # setup session
+    session[:query] = query
+    session[:a_columns] = sets['A']['columns']
+    session[:b_columns] = sets['B']['columns']
+
+    haml :query, :layout => false
   end
 end
 

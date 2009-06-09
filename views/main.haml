@@ -17,42 +17,51 @@
             %select{:id => "set_#{set}_database", :name => "set[#{set}][database]"}
               %option/
               - @databases.each do |database|
-                %option= database
+                %option{:selected => @last['set'][set]['database'] == database}= database
           %td
             %select{:id => "set_#{set}_from", :name => "set[#{set}][from]"}/
           %td
-            %input{:id => "set_#{set}_columns", :type => 'text', :name => "set[#{set}][columns]"}/
+            %input{:id => "set_#{set}_columns", :type => 'text', :name => "set[#{set}][columns]", :value => @last['set'][set]['columns']}/
           %td
-            %input{:type => 'text', :name => "set[#{set}][where]"}/
+            %input{:type => 'text', :name => "set[#{set}][where]", :value => @last['set'][set]['where']}/
           %td
-            %input{:type => 'text', :name => "set[#{set}][order]"}/
+            %input{:type => 'text', :name => "set[#{set}][order]", :value => @last['set'][set]['order']}/
           %td
             %img{:id => "set_#{set}_spinner", :src => 'ajax-loader.gif', :style => 'display:none;'}/
   %p
     Join:
-    %input{:type => 'text', :name => 'join'}/
+    %input{:type => 'text', :name => 'join', :value => @last['join']}/
     (Ex: A.MomSSN = B.SSN)
   %p
+    %input#timestamp{:type => 'hidden', :name => 'timestamp'}/
     %input{:type => 'submit', :value => 'Start'}/
+    %input{:type => 'reset', :value => 'Reset'}/
     %img#query_spinner{:src => 'ajax-loader.gif', :style => 'display:none;'}/
+
+#query
 
 #results
 
 :javascript
   $(function() {
-    $('#set_A_database, #set_B_database').change(function() { update_tables(this); });
+    $('#set_A_database').change(function() { update_tables(this, "#{@last['set']['A']['from']}"); });
+    $('#set_B_database').change(function() { update_tables(this, "#{@last['set']['B']['from']}"); });
     $('#set_A_from, #set_B_from').change(function() { update_columns(this); });
     $('form').submit(function() {
-      $('#results').html('');
+      $('#results, #query').html('');
       $('#query_spinner').show();
       $.ajax({
         type: 'POST',
         url: '/query',
         data: $(this).serialize(),
         dataType: 'html',
-        success: function(data) { set_results(data); }
+        success: function(data) {
+          $('#query').html(data);
+          update_records(1);
+        }
       });
       return false;
     });
-    $('form')[0].reset();
+    $('#set_A_database').change();
+    setTimeout('$(\'#set_B_database\').change();', 500);
   });
