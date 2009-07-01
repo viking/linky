@@ -1,12 +1,16 @@
+#!/usr/bin/env ruby
 require 'rubygems'
 require 'daemons'
 require ::File.join(::File.dirname(__FILE__), '..', 'lib', 'linky')
 
 # start DRb for worker process
-drb = Daemons.call do
-  worker = Linky::Databases::Worker.new
-  DRb.start_service worker.uri, worker
-  DRb.thread.join
+drb = nil
+unless ARGV[0] == "no-worker"
+  drb = Daemons.call do
+    worker = Linky::Databases::Worker.new
+    DRb.start_service worker.uri, worker
+    DRb.thread.join
+  end
 end
 
 builder = Rack::Builder.new do

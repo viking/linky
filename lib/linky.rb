@@ -76,21 +76,22 @@ module Linky
 
     get '/status' do
       database_session(:local) do |dbh|
-        row = dbh.select_one("SELECT status, first_id, error_msg FROM sessions WHERE id = ?", session[:session_id])
+        row = dbh.select_one("SELECT status, exception, first_id, done FROM sessions WHERE id = ?", session[:session_id])
         if row[0] == 'error'
-          @db_error = Marshal.load(row[2])
-          row[2] = haml(:error, :layout => false)
+          @db_error = Marshal.load(row[1])
+          row[1] = haml(:error, :layout => false)
         end
         row.to_h.to_json
       end
     end
 
     get '/candidates/:which' do
-      database_session(:local) do |dbh|
-        if results = fetch_candidates(dbh)
-          @target, @candidates, @next_id = results
+      database_session(:local) do |ldbh|
+        if results = fetch_candidates(ldbh)
+          @target, @candidates, @prev_id, @next_id = results
           haml :records, :layout => false
         else
+          ldbh.do("UPDATE sessions SET status = 'working' WHERE id = ?", session[:session_id])
           start_query
           "working"
         end

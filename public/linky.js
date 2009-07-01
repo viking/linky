@@ -51,7 +51,7 @@ function check_worker_status() {
 
     if (data.status == 'error') {
       clearInterval(status_check_id);
-      $('#results').html(data.error_msg);
+      $('#results').html(data.exception);
       $('#query_spinner').hide();
     }
   });

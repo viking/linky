@@ -29,7 +29,7 @@ module Linky
 
             result = remote.session do |rdbh|
               rsth = rdbh.prepare(query)
-              rsth.execute(total / options[:limit])
+              rsth.execute(total)
 
               # find column ranges
               names = {:a => [], :b => []}
@@ -43,9 +43,8 @@ module Linky
               ranges = {:a => 0..(tmp-1), :b => tmp..(num_cols-1)}
 
               target_id = first_id = candidate_id = nil
-              ldbh.do("UPDATE sessions SET status = ? WHERE id = ?", 'working', session_id)
               lsth = ldbh.prepare(<<-EOF)
-                INSERT INTO records (id, name, value, target_id, session_id)
+                INSERT INTO records (record_id, name, value, target_id, session_id)
                 VALUES(?, ?, ?, ?, #{session_id})
               EOF
 
@@ -82,14 +81,14 @@ module Linky
               end
               lsth.finish
               ldbh.do(
-                "UPDATE sessions SET status = ?, first_id = ?, last_id = ?, total = ? WHERE id = ?",
-                'done', first_id, target_id, total, session_id
+                "UPDATE sessions SET status = ?, first_id = ?, last_id = ?, total = ?, done = ? WHERE id = ?",
+                'done', first_id, target_id, total, (total % options[:limit]) > 0, session_id
               )
               rsth.finish
             end
             if result.is_a?(Exception)
               ldbh.do(
-                "UPDATE sessions SET status = ?, error_msg = ? WHERE id = ?",
+                "UPDATE sessions SET status = ?, exception = ? WHERE id = ?",
                 'error', Marshal.dump(result), session_id
               )
             end

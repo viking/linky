@@ -4,27 +4,31 @@
     %thead
       %tr
         %th.green{:colspan => 2}
-          -# %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
+          - if @prev_id
+            %a{:href => '#', :onclick => "update_records(#{@prev_id});"} &lt;
           == Target (#{params[:which]})
-          %a{:href => '#', :onclick => "update_records(#{@next_id});"} &gt;
+          - if @next_id
+            %a{:href => '#', :onclick => "update_records(#{@next_id});"} &gt;
       %tr
         %th Label
         %th Value
     %tbody
-      - @target.each_with_index do |(name, value), i|
+      - @target['_columns'].each_with_index do |name, i|
         %tr{:class => i % 2 == 1 ? 'alt' : nil}
           %td.label= name
-          %td= value
+          %td= @target[name]
 %div#candidates
-  - if !@candidates.empty?
+  - if @candidates.empty?
+    No candidates for this target.
+  - else
     - num = @candidates.first.length
     %table
       %thead
         %tr
-          %th.blue{:colspan => num+1} Candidates
+          %th.blue{:colspan => num} Candidates
         %tr
           %th Label
-          - num.times do |i|
+          - (num-1).times do |i|
             %th= i+1
       %tbody
         - @candidates.each_with_index do |values, i|

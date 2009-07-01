@@ -76,7 +76,7 @@ module Linky
             order_by << order     if order
           end
         end
-        query = %!SELECT #{columns.join(", ")}\nFROM #{from[0]} A\nLEFT JOIN #{from[1]} B ON #{params['join']}!
+        query = %!SELECT #{columns.join(", ")}\nFROM #{from[0]} A\n#{params['join_type']} #{from[1]} B ON #{params['join']}!
         if !conditions.empty?
           query << "\nWHERE (#{conditions.join(") AND (")})"
         end
@@ -101,30 +101,59 @@ module Linky
       end
 
       def fetch_candidates(dbh)
-        count = 0
-        if params[:which] =~ /^\d+$/
+        which = case params[:which]
+          when /^\d+$/ then params[:which].to_i
+          when 'first'
+            res = dbh.select_one("SELECT record_id FROM records WHERE target_id IS NULL ORDER BY id LIMIT 1")
+            res ? res[0].to_i : nil
+          else
+            nil
+        end
+
+        if which
           s_id = session[:session_id]
           which = params[:which].to_i
-          last_id = dbh.select_one("SELECT last_id FROM sessions WHERE id = ?", s_id).first
-          return false  if which == last_id
+          last_id, done = dbh.select_one("SELECT last_id, done FROM sessions WHERE id = ?", s_id).first
+          return false  if which == last_id.to_i
 
-          count = dbh.select_one("SELECT COUNT(*) FROM records WHERE id = ? AND session_id = ? AND target_id IS NULL", which, s_id)[0].to_i
+          count = dbh.select_one("SELECT COUNT(*) FROM records WHERE record_id = ? AND session_id = ? AND target_id IS NULL", which, s_id)[0].to_i
+          sys_ids = []
           if count > 0
-            target = []
-            dbh.select_all("SELECT * FROM records WHERE id = ? AND session_id = ? AND target_id IS NULL", which, s_id) do |row|
-              target << [row['name'], row['value']]
+            target = {'_columns' => []}
+            dbh.select_all("SELECT * FROM records WHERE record_id = ? AND session_id = ? AND target_id IS NULL", which, s_id) do |row|
+              sys_ids << row['id']
+              name = row['name']
+              next if target['_columns'].include?(name)
+
+              target['_columns'] << name
+              target[name] = row['value']
             end
-            tmp = dbh.select_one("SELECT id FROM records WHERE target_id IS NULL AND id > ? AND session_id = ?", which, s_id)
-            next_id = tmp ? tmp.first : nil
+
+            # grab surrounding ids
+            tmp = dbh.select_one(
+              "SELECT record_id FROM records WHERE target_id IS NULL AND record_id != ? AND id < ? AND session_id = ? ORDER BY id DESC LIMIT 1",
+              which, sys_ids.first, s_id
+            )
+            prev_id = tmp ? tmp.first : nil
+
+            if !done
+              tmp = dbh.select_one(
+                "SELECT record_id FROM records WHERE target_id IS NULL AND record_id != ? AND id > ? AND session_id = ? ORDER by id LIMIT 1",
+                which, sys_ids.last, s_id
+              )
+              next_id = tmp ? tmp.first : "'next'"
+            else
+              next_id = nil
+            end
 
             candidates = []
             last_id = nil
-            dbh.select_all("SELECT * FROM records WHERE target_id = ? AND session_id = ? ORDER BY id", which, s_id) do |row|
+            dbh.select_all("SELECT * FROM records WHERE target_id = ? AND session_id = ?", which, s_id) do |row|
               assoc = candidates.assoc(row['name'])
               candidates << (assoc = [row['name']])    if !assoc
               assoc << row['value']
             end
-            return [target, candidates, next_id]
+            return [target, candidates, prev_id, next_id]
           end
         end
         false
