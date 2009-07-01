@@ -41,13 +41,45 @@ function update_columns(elem) {
   }
 }
 
+var status_check_id = null;
+function check_worker_status() {
+  $.getJSON('/status', function(data) {
+    if (data.status == 'done') {
+      clearInterval(status_check_id);
+      update_records(data.first_id);
+    }
+
+    if (data.status == 'error') {
+      clearInterval(status_check_id);
+      $('#results').html(data.error_msg);
+      $('#query_spinner').hide();
+    }
+  });
+}
+
+function wait_for_worker() {
+  status_check_id = setInterval(check_worker_status, 1000);
+}
+
 function update_records(which) {
+  if (typeof(which) == "undefined") {
+    which = 'first';
+  }
+
   $('#query_spinner').show();
   $.ajax({
     type: 'GET',
     url: '/candidates/'+which,
     dataType: 'html',
-    success: function(data) { set_results(data); }
+    success: function(data) {
+      if (data == "working") {
+        // wait for worker to finish
+        wait_for_worker();
+      }
+      else {
+        set_results(data);
+      }
+    }
   });
 }
 

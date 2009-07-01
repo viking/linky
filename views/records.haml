@@ -4,32 +4,30 @@
     %thead
       %tr
         %th.green{:colspan => 2}
-          %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
-          Target (
-          %div.editable= @which
-          )
-          %a{:href => '#', :onclick => "update_records(#{@which+1});"} &gt;
+          -# %a{:href => '#', :onclick => "update_records(#{@which-1});"} &lt;
+          == Target (#{params[:which]})
+          %a{:href => '#', :onclick => "update_records(#{@next_id});"} &gt;
       %tr
         %th Label
         %th Value
     %tbody
-      - session[:a_columns].each_with_index do |name, i|
+      - @target.each_with_index do |(name, value), i|
         %tr{:class => i % 2 == 1 ? 'alt' : nil}
           %td.label= name
-          %td= @target[name]
+          %td= value
 %div#candidates
   - if !@candidates.empty?
+    - num = @candidates.first.length
     %table
       %thead
         %tr
-          %th.blue{:colspan => @candidates.length+1} Candidates
+          %th.blue{:colspan => num+1} Candidates
         %tr
           %th Label
-          - @candidates.length.times do |i|
+          - num.times do |i|
             %th= i+1
       %tbody
-        - session[:b_columns].each_with_index do |name, i|
+        - @candidates.each_with_index do |values, i|
           %tr{:class => i % 2 == 1 ? 'alt' : nil}
-            %td.label= name
-            - @candidates.each do |candidate|
-              %td= candidate[name]
+            - values.each_with_index do |value, i|
+              %td{:class => (i == 0 ? 'label' : nil)}= value

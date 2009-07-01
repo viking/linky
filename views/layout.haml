@@ -9,11 +9,10 @@
   %body
     #error
       - if @db_error
-        .error
-          == Error code: #{@db_error.errno}
+        %div.error
+          == Error code: #{@db_error.err}
           %br/
-          == Error message: #{@db_error.error}
+          == Error message: #{@db_error.errstr}
           %br/
-          - if @error.respond_to?("sqlstate")
-            == Error SQLSTATE: #{@db_error.sqlstate}
+          == Error state: #{@db_error.state}
     = yield
