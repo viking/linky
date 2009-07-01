@@ -1,0 +1,10 @@
+Linky is a Sinatra application used to compare records in a MySQL database.  To
+use, you'll need to install some gems first:
+
+  gem install sinatra haml json daemons dbi dbd-mysql dbd-sqlite3
+
+Then clone this repository, change directory into it, and run:
+
+  ruby script/linky
+
+Eventually, Linky will be gemified and its dependencies will be reduced.
