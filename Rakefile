@@ -18,3 +18,9 @@ begin
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
 end
+
+desc 'Clean up'
+task :clean do
+  require 'fileutils'
+  FileUtils.rm File.expand_path(File.dirname(__FILE__) + '/db/cache.sqlite3'), :verbose => true
+end
