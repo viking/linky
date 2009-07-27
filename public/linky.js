@@ -52,7 +52,7 @@ function check_worker_status() {
     if (data.status == 'error') {
       clearInterval(status_check_id);
       $('#results').html(data.exception);
-      $('#query_spinner').hide();
+      $('#spinner').hide();
     }
   });
 }
@@ -66,7 +66,7 @@ function update_records(which) {
     which = 'first';
   }
 
-  $('#query_spinner').show();
+  $('#spinner').show();
   $.ajax({
     type: 'GET',
     url: '/candidates/'+which,
@@ -85,6 +85,6 @@ function update_records(which) {
 
 function set_results(data) {
   $('#results').html(data);
-  $('#query_spinner').hide();
+  $('#spinner').hide();
   $('#results .editable').editable(function(value) { update_records(value); }, { style: "inherit", width: '40' });
 }

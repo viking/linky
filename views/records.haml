@@ -4,14 +4,15 @@
     %thead
       %tr
         %th.green{:colspan => 2}
-          - if @prev_id
-            %a{:href => '#', :onclick => "update_records(#{@prev_id});"} &lt;
-          == Target (#{params[:which]})
-          - if @next_id
-            %a{:href => '#', :onclick => "update_records(#{@next_id});"} &gt;
+          %div.relative
+            - if @prev_id
+              .left{:onclick => "update_records(#{@prev_id});"}
+            == Target (#{params[:which]})
+            - if @next_id
+              .right{:onclick => "update_records(#{@next_id});"}
       %tr
-        %th Label
-        %th Value
+        %th{:style => "width: #{@label_length}ex"} Label
+        %th{:style => "width: #{@value_length}ex"} Value
     %tbody
       - @target['_columns'].each_with_index do |name, i|
         %tr{:class => i % 2 == 1 ? 'alt' : nil}

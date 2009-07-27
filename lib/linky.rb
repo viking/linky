@@ -88,7 +88,7 @@ module Linky
     get '/candidates/:which' do
       database_session(:local) do |ldbh|
         if results = fetch_candidates(ldbh)
-          @target, @candidates, @prev_id, @next_id = results
+          @target, @candidates, @prev_id, @next_id, @label_length, @value_length = results
           haml :records, :layout => false
         else
           ldbh.do("UPDATE sessions SET status = 'working' WHERE id = ?", session[:session_id])

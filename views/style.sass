@@ -18,6 +18,9 @@ h2
   background-color: #c00000
   color: white
 
+.relative
+  position: relative
+
 pre
   background: #eee
   margin: 0 1em
@@ -38,10 +41,20 @@ form
   p
     margin: 10px 0
 
+#spinner
+  position: absolute
+  background: url(/spinner.gif) no-repeat left top
+  width: 32px
+  height: 16px
+  top: 0
+  right: 0
+
 #target
+  float: left
   margin-bottom: 15px
 
 #candidates
+  float: left
   width: 900px
   overflow: auto
 
@@ -67,7 +80,20 @@ form
     th
       background-color: #333
       color: white
-      padding: 5px
+      height: 2.5em
+      div.left, div.right
+        position: absolute
+        display: block
+        top: 0
+        width: 24px
+        height: 24px
+        cursor: pointer
+      div.left
+        left: 0
+        background: url(/left.gif) no-repeat left center
+      div.right
+        right: 0
+        background: url(/right.gif) no-repeat right center
     th.green
       background-color: green
     th.blue

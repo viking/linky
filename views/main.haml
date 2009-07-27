@@ -38,11 +38,12 @@
     %input#timestamp{:type => 'hidden', :name => 'timestamp'}/
     %input{:type => 'submit', :value => 'Start'}/
     %input{:type => 'reset', :value => 'Reset'}/
-    %img#query_spinner{:src => 'ajax-loader.gif', :style => 'display:none;'}/
+
+#results
 
 #query
 
-#results
+#spinner{:style => 'display:none;'}
 
 :javascript
   $(function() {
@@ -51,7 +52,7 @@
     $('#set_A_from, #set_B_from').change(function() { update_columns(this); });
     $('form').submit(function() {
       $('#results, #query').html('');
-      $('#query_spinner').show();
+      $('#spinner').show();
       $.ajax({
         type: 'POST',
         url: '/query',

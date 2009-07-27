@@ -13,7 +13,7 @@ module Linky
         super
         if do_init
           @dbh.do("CREATE TABLE records (id INTEGER PRIMARY KEY, record_id TEXT, name TEXT, value TEXT, target_id INTEGER, session_id INTEGER)")
-          @dbh.do("CREATE TABLE sessions (id INTEGER PRIMARY KEY, query TEXT, status TEXT, total INTEGER, done INTEGER, first_id TEXT, last_id TEXT, exception RAW)")
+          @dbh.do("CREATE TABLE sessions (id INTEGER PRIMARY KEY, query TEXT, status TEXT, total INTEGER, done INTEGER, first_id TEXT, last_id TEXT, label_length INTEGER, value_length INTEGER, exception RAW)")
         end
         @dbh
       end

@@ -6,9 +6,9 @@ module Linky
       DRB_URI = "druby://localhost:9786"
       LOGFILE = File.expand_path(File.join(File.dirname(__FILE__),'..','..','..','log','worker.log'))
 
-#      def initialize
-#        @log = Logger.new(LOGFILE)
-#      end
+      def initialize
+        @log = Logger.new(STDERR)
+      end
 
       def uri
         return DRB_URI
@@ -16,26 +16,30 @@ module Linky
 
       def remote_query(options)
         Thread.new do
-#          p options
-#          @log.info "Starting query:"
-#          @log.info options[:query]
+          @log.info "Options: " + options.inspect
 
           session_id = options[:session_id]
           local = Databases::Local.new
           remote = Databases::Remote.new(options[:db])
           local.transaction do |ldbh|
-            query, total = ldbh.select_one("SELECT query, total FROM sessions WHERE id = ?", session_id)
+            query, total, label_length, value_length = ldbh.select_one("SELECT query, total, label_length, value_length FROM sessions WHERE id = ?", session_id)
             total = total.to_i
+            label_length = label_length ? label_length.to_i : 0
+            value_length = value_length ? value_length.to_i : 0
+
+            @log.info "Query:"
+            @log.info query
 
             result = remote.session do |rdbh|
               rsth = rdbh.prepare(query)
               rsth.execute(total)
 
-              # find column ranges
+              # find column ranges; save max name length
               names = {:a => [], :b => []}
               num_cols = rsth.column_names.size
               rsth.column_names.each_with_index do |col, i|
                 first_b ||= i   if col =~ /^B/
+                label_length = col.length  if col.length > label_length
 
                 names[col =~ /^A_/ ? :a : :b] << col[2..-1]
               end
@@ -48,7 +52,7 @@ module Linky
                 VALUES(?, ?, ?, ?, #{session_id})
               EOF
 
-              # collect each target and its candidates;
+              # collect each target and its candidates
               set = []
               loop do
                 row = rsth.fetch
@@ -65,6 +69,7 @@ module Linky
                       next
                     end
                     set << [target_id, names[:a][i], value, nil]
+                    value_length = value.length   if value.length > value_length
                   end
                   first_id ||= target_id
                 end
@@ -81,8 +86,8 @@ module Linky
               end
               lsth.finish
               ldbh.do(
-                "UPDATE sessions SET status = ?, first_id = ?, last_id = ?, total = ?, done = ? WHERE id = ?",
-                'done', first_id, target_id, total, (total % options[:limit]) > 0, session_id
+                "UPDATE sessions SET status = ?, first_id = ?, last_id = ?, total = ?, done = ?, label_length = ?, value_length = ? WHERE id = ?",
+                'done', first_id, target_id, total, (total % options[:limit]) > 0, label_length, value_length, session_id
               )
               rsth.finish
             end
@@ -93,7 +98,7 @@ module Linky
               )
             end
           end
-#          @log.info "Finished query."
+          @log.info "Finished query."
         end
       end
     end

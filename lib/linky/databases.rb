@@ -113,7 +113,7 @@ module Linky
         if which
           s_id = session[:session_id]
           which = params[:which].to_i
-          last_id, done = dbh.select_one("SELECT last_id, done FROM sessions WHERE id = ?", s_id).first
+          last_id, done, label_length, value_length = dbh.select_one("SELECT last_id, done, label_length, value_length FROM sessions WHERE id = ?", s_id)
           return false  if which == last_id.to_i
 
           count = dbh.select_one("SELECT COUNT(*) FROM records WHERE record_id = ? AND session_id = ? AND target_id IS NULL", which, s_id)[0].to_i
@@ -136,24 +136,22 @@ module Linky
             )
             prev_id = tmp ? tmp.first : nil
 
-            if !done
-              tmp = dbh.select_one(
-                "SELECT record_id FROM records WHERE target_id IS NULL AND record_id != ? AND id > ? AND session_id = ? ORDER by id LIMIT 1",
-                which, sys_ids.last, s_id
-              )
-              next_id = tmp ? tmp.first : "'next'"
-            else
-              next_id = nil
-            end
+            tmp = dbh.select_one(
+              "SELECT record_id FROM records WHERE target_id IS NULL AND record_id != ? AND id > ? AND session_id = ? ORDER by id LIMIT 1",
+              which, sys_ids.last, s_id
+            )
+            next_id = tmp ? tmp.first : (done ? nil : "'next'")
 
             candidates = []
             last_id = nil
             dbh.select_all("SELECT * FROM records WHERE target_id = ? AND session_id = ?", which, s_id) do |row|
-              assoc = candidates.assoc(row['name'])
-              candidates << (assoc = [row['name']])    if !assoc
-              assoc << row['value']
+              name = row['name']; value = row['value']
+
+              assoc = candidates.assoc(name)
+              candidates << (assoc = [name])    if !assoc
+              assoc << value
             end
-            return [target, candidates, prev_id, next_id]
+            return [target, candidates, prev_id, next_id, label_length, value_length]
           end
         end
         false
