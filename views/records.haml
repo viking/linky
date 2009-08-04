@@ -5,24 +5,25 @@
       %tr
         %th.green{:colspan => 2}
           %div.relative
-            - if @prev_id
-              .left{:onclick => "update_records(#{@prev_id});"}
+            - if @results[:prev_id]
+              .left{:onclick => "update_records(#{@results[:prev_id]});"}
             == Target (#{params[:which]})
-            - if @next_id
-              .right{:onclick => "update_records(#{@next_id});"}
+            %img#goto{:src => '/goto.gif', :style => 'cursor: pointer', :title => "Goto"}/
+            - if @results[:next_id]
+              .right{:onclick => "update_records(#{@results[:next_id]});"}
       %tr
-        %th{:style => "width: #{@label_length}ex"} Label
-        %th{:style => "width: #{@value_length}ex"} Value
+        %th{:style => "width: #{@results[:label_length]}ex"} Label
+        %th{:style => "width: #{@results[:value_length]}ex"} Value
     %tbody
-      - @target['_columns'].each_with_index do |name, i|
+      - @results[:target]['_columns'].each_with_index do |name, i|
         %tr{:class => i % 2 == 1 ? 'alt' : nil}
           %td.label= name
-          %td= @target[name]
+          %td= @results[:target][name]
 %div#candidates
-  - if @candidates.empty?
+  - if @results[:candidates].empty?
     No candidates for this target.
   - else
-    - num = @candidates.first.length
+    - num = @results[:candidates].first.length
     %table
       %thead
         %tr
@@ -32,7 +33,14 @@
           - (num-1).times do |i|
             %th= i+1
       %tbody
-        - @candidates.each_with_index do |values, i|
+        - @results[:candidates].each_with_index do |values, i|
           %tr{:class => i % 2 == 1 ? 'alt' : nil}
             - values.each_with_index do |value, i|
               %td{:class => (i == 0 ? 'label' : nil)}= value
+
+#dialog{:style => 'display: none'}
+  %form
+    Go to:
+    %input{:type => 'text', :size => 10 }/
+    %input{:type => 'button', :value => 'Go'}/
+    %input{:type => 'button', :value => 'Cancel'}/

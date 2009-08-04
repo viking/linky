@@ -100,7 +100,7 @@ module Linky
         query
       end
 
-      def fetch_candidates(dbh)
+      def fetch_results(dbh)
         which = case params[:which]
           when /^\d+$/ then params[:which].to_i
           when 'first'
@@ -151,7 +151,11 @@ module Linky
               candidates << (assoc = [name])    if !assoc
               assoc << value
             end
-            return [target, candidates, prev_id, next_id, label_length, value_length]
+            return {
+              :target => target, :candidates => candidates,
+              :prev_id => prev_id, :next_id => next_id,
+              :label_length => label_length, :value_length => value_length
+            }
           end
         end
         false

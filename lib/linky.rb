@@ -87,14 +87,20 @@ module Linky
 
     get '/candidates/:which' do
       database_session(:local) do |ldbh|
-        if results = fetch_candidates(ldbh)
-          @target, @candidates, @prev_id, @next_id, @label_length, @value_length = results
+        @results = fetch_results(ldbh)
+        if @results
           haml :records, :layout => false
         else
           ldbh.do("UPDATE sessions SET status = 'working' WHERE id = ?", session[:session_id])
           start_query
           "working"
         end
+      end
+    end
+
+    get '/target_ids/:q' do
+      database_session(:local) do |ldbh|
+        ldbh.select_all("SELECT record_id FROM records WHERE record_id LIKE ? AND session_id = ?", params[:q], session[:session_id]).join("\n")
       end
     end
 

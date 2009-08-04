@@ -85,10 +85,13 @@ module Linky
                 total += 1
               end
               lsth.finish
-              ldbh.do(
+
+              qry = [
                 "UPDATE sessions SET status = ?, first_id = ?, last_id = ?, total = ?, done = ?, label_length = ?, value_length = ? WHERE id = ?",
                 'done', first_id, target_id, total, (total % options[:limit]) > 0, label_length, value_length, session_id
-              )
+              ]
+              @log.info "Updating session: #{qry.inspect}"
+              ldbh.do(*qry)
               rsth.finish
             end
             if result.is_a?(Exception)

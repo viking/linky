@@ -86,5 +86,26 @@ function update_records(which) {
 function set_results(data) {
   $('#results').html(data);
   $('#spinner').hide();
-  $('#results .editable').editable(function(value) { update_records(value); }, { style: "inherit", width: '40' });
+
+  // setup goto dialog
+  dialog = $('#dialog');
+  form   = dialog.find('form');
+  field  = dialog.find('input:first');
+  cancel = dialog.find('input:last');
+  doc    = $(document);
+  $('#goto').click(function(e) {
+    pTop  = e.clientY + doc.scrollTop() + 10;
+    pLeft = e.clientX + doc.scrollLeft() + 10;
+    dialog.css({ top: pTop, left: pLeft });
+    field.val('');
+    dialog.show();
+  })
+  form.submit(function() {
+    update_records(field.val());
+    dialog.hide();
+    return false;
+  })
+  cancel.click(function() {
+    dialog.hide();
+  })
 }
