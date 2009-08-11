@@ -12,6 +12,10 @@ module Linky
   class Application < Sinatra::Base
     register Linky::Databases
     register Linky::History
+    helpers do
+      include Rack::Utils
+      alias_method :h, :escape_html
+    end
 
     configure do
       set :static, true

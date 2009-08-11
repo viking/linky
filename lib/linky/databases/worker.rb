@@ -30,6 +30,11 @@ module Linky
             @log.info "Query:"
             @log.info query
 
+            lsth = ldbh.prepare(<<-EOF)
+              INSERT INTO records (record_id, name, value, target_id, session_id)
+              VALUES(?, ?, ?, ?, #{session_id})
+            EOF
+
             result = remote.session do |rdbh|
               rsth = rdbh.prepare(query)
               rsth.execute(total)
@@ -47,10 +52,6 @@ module Linky
               ranges = {:a => 0..(tmp-1), :b => tmp..(num_cols-1)}
 
               target_id = first_id = candidate_id = nil
-              lsth = ldbh.prepare(<<-EOF)
-                INSERT INTO records (record_id, name, value, target_id, session_id)
-                VALUES(?, ?, ?, ?, #{session_id})
-              EOF
 
               # collect each target and its candidates
               set = []
@@ -84,7 +85,6 @@ module Linky
                 end
                 total += 1
               end
-              lsth.finish
 
               qry = [
                 "UPDATE sessions SET status = ?, first_id = ?, last_id = ?, total = ?, done = ?, label_length = ?, value_length = ? WHERE id = ?",
@@ -94,6 +94,8 @@ module Linky
               ldbh.do(*qry)
               rsth.finish
             end
+            lsth.finish
+
             if result.is_a?(Exception)
               ldbh.do(
                 "UPDATE sessions SET status = ?, exception = ? WHERE id = ?",

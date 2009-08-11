@@ -29,8 +29,8 @@ module Linky
       def session
         begin
           yield(self)
-        rescue DBI::DatabaseError => error
-          error
+        rescue
+          $!
         ensure
           disconnect
         end

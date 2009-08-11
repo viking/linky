@@ -1,6 +1,11 @@
 %div.error
-  == Error code: #{@db_error.err}
-  %br/
-  == Error message: #{@db_error.errstr}
-  %br/
-  == Error state: #{@db_error.state}
+  - if @db_error.is_a?(DBI::DatabaseError)
+    == Error code: #{@db_error.err}
+    %br/
+    == Error message: #{@db_error.errstr}
+    %br/
+    == Error state: #{@db_error.state}
+  - else
+    =h @db_error.inspect
+    %pre
+      = @db_error.backtrace.join("\n")
