@@ -18,7 +18,11 @@ module Linky
       end
 
       def connection
-        @dbh ||= DBI.connect(@dsn, @options[:user], @options[:password])
+        if @dbh.nil?
+          @dbh = DBI.connect(@dsn, @options[:user], @options[:password])
+          @dbh.convert_types = false
+        end
+        @dbh
       end
 
       def disconnect

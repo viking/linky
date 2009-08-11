@@ -1,43 +1,45 @@
-function update_tables(elem, def, callback) {
-  select = $('#'+elem.id.replace('database', 'from'));
-  spinner = $('#'+elem.id.replace('database', 'spinner'));
-  database = $(elem).val();
+function update_tables(elem, def) {
+  ctx = {
+    select:   $('#'+elem.id.replace('database', 'from')),
+    spinner:  $('#'+elem.id.replace('database', 'spinner')),
+    database: $(elem).val()
+  };
+  ctx.select.children().remove();
 
-  select.children().remove();
-  if (database != "") {
-    spinner.show();
-    $.getJSON("/tables/"+database, function(data) {
-      $('<option></option>').appendTo(select);
+  if (ctx.database != "") {
+    ctx.spinner.show();
+    $.linkyq.add("/tables/"+ctx.database, ctx, function(data, ctx) {
+      //console.log('Updating tables for: ' + ctx.database);
+      $('<option></option>').appendTo(ctx.select);
       $.each(data, function(i, name) {
         option = $('<option>'+name+'</option>')
         if (name == def) {
           option.attr('selected', true);
         }
-        option.appendTo(select);
+        option.appendTo(ctx.select);
       });
-      if (callback != undefined) {
-        callback.call();
-      }
-      spinner.hide();
+      ctx.spinner.hide();
     });
   }
 }
 
 function update_columns(elem) {
-  input = $('#'+elem.id.replace('from', 'columns'));
-  spinner = $('#'+elem.id.replace('from', 'spinner'));
-  database = $('#'+elem.id.replace('from', 'database')).val();
-  table = $(elem).val();
+  ctx = {
+    input: $('#'+elem.id.replace('from', 'columns')),
+    spinner: $('#'+elem.id.replace('from', 'spinner')),
+    database: $('#'+elem.id.replace('from', 'database')).val(),
+    table: $(elem).val()
+  }
 
-  if (database != "" && table != "") {
-    spinner.show();
-    $.getJSON("/columns/"+database+"/"+table, function(data) {
-      input.autocomplete(data, { multiple: true });
-      spinner.hide();
+  if (ctx.database != "" && ctx.table != "") {
+    ctx.spinner.show();
+    $.linkyq.add("/columns/"+ctx.database+"/"+ctx.table, ctx, function(data, ctx) {
+      ctx.input.autocomplete(data, { multiple: true });
+      ctx.spinner.hide();
     });
   }
   else {
-    input.autocomplete([]);
+    ctx.input.autocomplete([]);
   }
 }
 
