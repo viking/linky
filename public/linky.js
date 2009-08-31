@@ -88,6 +88,7 @@ function update_records(which) {
 function set_results(data) {
   $('#results').html(data);
   $('#spinner').hide();
+  $("#start").removeAttr("disabled").val('Start');
 
   // setup goto dialog
   dialog = $('#dialog');

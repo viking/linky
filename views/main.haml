@@ -36,8 +36,8 @@
     (Ex: A.MomSSN = B.SSN)
   %p
     %input#timestamp{:type => 'hidden', :name => 'timestamp'}/
-    %input{:type => 'submit', :value => 'Start'}/
-    %input{:type => 'reset', :value => 'Reset'}/
+    %input#start{:type => 'submit', :value => 'Start'}/
+    %input{:type => 'reset', :value => 'Reset Form'}/
 
 #results
 
@@ -53,6 +53,7 @@
     $('form').submit(function() {
       $('#results, #query').html('');
       $('#spinner').show();
+      $("#start").attr("disabled","disabled").val('Busy...');
       $.ajax({
         type: 'POST',
         url: '/query',
