@@ -36,6 +36,7 @@ module Linky
     post '/' do
       session[:db] = {
         :server   => params[:db][:server],
+        :port     => params[:db][:port],
         :user     => params[:db][:user],
         :password => params[:db][:password]
       }

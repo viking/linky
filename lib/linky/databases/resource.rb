@@ -11,10 +11,12 @@ module Linky
         raise "no adapter set"      unless @@adapters[self.class]
         @options = options
 
-        parts = ["DBI", @@adapters[self.class]]
-        parts << "host=#{@options[:server]}"  if @options[:server]
-        parts << @options[:database]          if @options[:database]
-        @dsn = parts.join(":")
+        @dsn = "DBI:#{@@adapters[self.class]}"
+        parts = []
+        parts << "host=#{@options[:server]}"    if @options[:server]
+        parts << "port=#{@options[:port]}"      if @options[:port]
+        parts << @options[:database]            if @options[:database]
+        @dsn << ":#{parts.join(";")}" unless parts.empty?
       end
 
       def connection
